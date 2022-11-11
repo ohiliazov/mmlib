@@ -1,3 +1,6 @@
+from typing import Optional
+
+
 class Player:
     def __init__(
         self,
@@ -26,3 +29,10 @@ class Player:
 
     def __hash__(self):
         return hash(self.player_id)
+
+
+class PlayerSet(set[Player]):
+    def get(self, player_id: str) -> Optional[Player]:
+        for player in self:
+            if player.player_id == player_id:
+                return player

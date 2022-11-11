@@ -1,8 +1,52 @@
-from mmlib.player import Player
-from mmlib.players_list import PlayerSet
+import random
+import uuid
+
+from mmlib.game import Game, GameSet
+from mmlib.parameters import Parameters
+from mmlib.player import Player, PlayerSet
+from mmlib.handicap import calculate_handicap
 
 
 class Tournament:
-    def __init__(self, players: PlayerSet):
-        self.players = players
+    def __init__(
+        self,
+        parameters: Parameters,
+        players: PlayerSet = None,
+        games: GameSet = None,
+    ):
+        self.parameters = parameters
+        self.players = players or PlayerSet()
+        self.games = games or GameSet()
 
+    def make_game(self, round_number: int, player1: Player, player2: Player) -> Game:
+        if player1.rank > player2.rank:
+            player1, player2 = player2, player1
+
+        handicap = calculate_handicap(
+            player1.rank,
+            player2.rank,
+            handicap_bar=self.parameters.handicap_bar,
+            handicap_correction=self.parameters.handicap_correction,
+            handicap_max=self.parameters.handicap_max,
+        )
+        p1_color_balance = self.games.color_balance(player1.player_id)
+        p2_color_balance = self.games.color_balance(player2.player_id)
+
+        if handicap or p1_color_balance > p2_color_balance:
+            black_id, white_id = player1.player_id, player2.player_id
+        elif p1_color_balance < p2_color_balance:
+            white_id, black_id = player1.player_id, player2.player_id
+        else:
+            random.seed(player1.player_id + player2.player_id)
+            black_id, white_id = random.sample(
+                [player1.player_id, player2.player_id],
+                k=2,
+            )
+
+        return Game(
+            game_id=f"{round_number}::{white_id}::{black_id}",
+            round_number=round_number,
+            black_id=black_id,
+            white_id=white_id,
+            handicap=handicap,
+        )
