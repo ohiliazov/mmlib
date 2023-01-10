@@ -5,16 +5,13 @@ description = "Library for MacMahon Tournaments"
 authors = ["Oleksandr Hiliazov <oleksandr.hiliazov@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.11"
 pydantic = "^1.10.2"
+python = "^3.10"
 
-[tool.poetry.group.dev.dependencies]
+[tool.poetry.dev-dependencies]
+faker = "^15.3.2"
 pre-commit = "^2.20.0"
-
-
-[tool.poetry.group.test.dependencies]
 pytest = "^7.2.0"
-faker = "^15.3.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

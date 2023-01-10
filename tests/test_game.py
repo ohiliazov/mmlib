@@ -23,3 +23,46 @@ def test_game_set(generated_games):
 
     assert game_set.get(game1.game_id) is game1
     assert game_set.get("fake-uuid4") is None
+
+
+def test_game_set_color_balance(generated_players):
+    game_set = GameSet()
+    player1, player2 = random.sample(generated_players, k=2)
+
+    # playing as white increases color balance
+    game_set.add(
+        Game(
+            game_id="game1",
+            round_number=0,
+            black_id=player1.player_id,
+            white_id=player2.player_id,
+            handicap=0,
+        )
+    )
+    assert game_set.color_balance(player1.player_id) == -1
+    assert game_set.color_balance(player2.player_id) == 1
+
+    # handicap games should not be included in color balance count
+    game_set.add(
+        Game(
+            game_id="game2",
+            round_number=0,
+            black_id=player2.player_id,
+            white_id=player1.player_id,
+            handicap=1,
+        )
+    )
+    assert game_set.color_balance(player1.player_id) == -1
+    assert game_set.color_balance(player2.player_id) == 1
+
+    game_set.add(
+        Game(
+            game_id="game3",
+            round_number=0,
+            black_id=player2.player_id,
+            white_id=player1.player_id,
+            handicap=0,
+        )
+    )
+    assert game_set.color_balance(player1.player_id) == 0
+    assert game_set.color_balance(player2.player_id) == 0

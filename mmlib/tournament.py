@@ -1,8 +1,9 @@
 import random
 import uuid
+from typing import Iterable
 
 from mmlib.game import Game, GameSet
-from mmlib.parameters import Parameters
+from mmlib.parameters import HandicapParameters
 from mmlib.player import Player, PlayerSet
 from mmlib.handicap import calculate_handicap
 
@@ -10,24 +11,22 @@ from mmlib.handicap import calculate_handicap
 class Tournament:
     def __init__(
         self,
-        parameters: Parameters,
-        players: PlayerSet = None,
-        games: GameSet = None,
+        handicap_parameters: HandicapParameters,
+        players: Iterable[Player] = None,
+        games: Iterable[Game] = None,
     ):
-        self.parameters = parameters
-        self.players = players or PlayerSet()
-        self.games = games or GameSet()
+        self.handicap_params = handicap_parameters
+        self.players = PlayerSet(players or set())
+        self.games = GameSet(games or set())
 
     def make_game(self, round_number: int, player1: Player, player2: Player) -> Game:
         if player1.rank > player2.rank:
             player1, player2 = player2, player1
 
         handicap = calculate_handicap(
-            player1.rank,
-            player2.rank,
-            handicap_bar=self.parameters.handicap_bar,
-            handicap_correction=self.parameters.handicap_correction,
-            handicap_max=self.parameters.handicap_max,
+            lower_rank=player1.rank,
+            higher_rank=player2.rank,
+            handicap_params=self.handicap_params,
         )
         p1_color_balance = self.games.color_balance(player1.player_id)
         p2_color_balance = self.games.color_balance(player2.player_id)
@@ -37,7 +36,7 @@ class Tournament:
         elif p1_color_balance < p2_color_balance:
             white_id, black_id = player1.player_id, player2.player_id
         else:
-            random.seed(player1.player_id + player2.player_id)
+            random.seed(f"{player1.player_id}::{player2.player_id}")
             black_id, white_id = random.sample(
                 [player1.player_id, player2.player_id],
                 k=2,
