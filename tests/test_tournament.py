@@ -1,8 +1,12 @@
-import pytest
-
-from mmlib.parameters import Parameters
+from mmlib.parameters import HandicapParameters
 from mmlib.tournament import Tournament
 
 
 def test_make_game(generated_players):
-    tournament = Tournament(parameters=Parameters())
+    Tournament(
+        handicap_params=HandicapParameters(
+            handicap_bar=0,
+            handicap_max=0,
+            handicap_correction=0,
+        )
+    )

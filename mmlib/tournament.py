@@ -1,5 +1,4 @@
 import random
-import uuid
 from typing import Iterable
 
 from mmlib.game import Game, GameSet
@@ -11,11 +10,11 @@ from mmlib.handicap import calculate_handicap
 class Tournament:
     def __init__(
         self,
-        handicap_parameters: HandicapParameters,
+        handicap_params: HandicapParameters,
         players: Iterable[Player] = None,
         games: Iterable[Game] = None,
     ):
-        self.handicap_params = handicap_parameters
+        self.handicap_params = handicap_params
         self.players = PlayerSet(players or set())
         self.games = GameSet(games or set())
 

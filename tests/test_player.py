@@ -1,7 +1,6 @@
 import random
 
-from mmlib.player import Player, PlayerSet
-from tests.helpers import generate_player
+from mmlib.player import PlayerSet
 
 
 def test_player(generated_players):
