@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from mmlib.constants import DUDDMode, GameResult, SeedingMode
 
@@ -23,8 +23,7 @@ class Game(BaseModel):
     black_id: str
     white_id: str
     handicap: int
-    result: GameResult = GameResult.UNKNOWN
-    use_color: bool = True
+    result: GameResult | None = None
 
     def has_played(self, player_id: str) -> bool:
         return player_id == self.black_id or player_id == self.white_id
@@ -51,7 +50,7 @@ class Game(BaseModel):
             return self.white_id
 
     def color_balance(self, player_id: str) -> int:
-        if self.use_color and not self.handicap:
+        if self.handicap == 0:
             if self.black_id == player_id:
                 return -1
             if self.white_id == player_id:
@@ -77,6 +76,13 @@ class ScoredPlayer(Player):
     draw_ups: int = 0
     draw_downs: int = 0
     color_balance: int = 0
+    opponent_ids: set = Field(default_factory=set)
 
     def placement_criteria(self):
         return -self.mms_x2, -self.sos_x2, -self.sosos_x2, self.player_id
+
+
+class Tournament(BaseModel):
+    players: list[Player]
+    games: list[list[Game]]
+    parameters: Parameters

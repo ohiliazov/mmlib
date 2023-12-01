@@ -1,0 +1,41 @@
+{
+  "players": [
+    {
+      "player_id": "p1",
+      "rank": 0,
+      "smms_x2": 0
+    },
+    {
+      "player_id": "p2",
+      "rank": 0,
+      "smms_x2": 0
+    },
+    {
+      "player_id": "p3",
+      "rank": 0,
+      "smms_x2": 0
+    },
+    {
+      "player_id": "p4",
+      "rank": 0,
+      "smms_x2": 0
+    }
+  ],
+  "games": [
+    [
+      {
+        "black_id": "p3",
+        "white_id": "p1",
+        "handicap": 0,
+        "result": "black_wins"
+      },
+      {
+        "black_id": "p4",
+        "white_id": "p2",
+        "handicap": 0,
+        "result": "white_wins"
+      }
+    ]
+  ],
+  "parameters": {}
+}

@@ -1,25 +1,35 @@
 import json
 from pathlib import Path
-from typing import Iterator
 
 import pytest
+
+from mmlib.macmahon import MacMahon
+from mmlib.models import Game, Tournament
 
 test_data_path = Path(__file__).parent / "test_data"
 
 
-def load_data() -> Iterator[tuple[dict, dict]]:
+def get_input_paths():
+    input_dir = test_data_path / "input"
+    return [input_path.name for input_path in input_dir.iterdir()]
+
+
+def load_data(name: str) -> tuple[Tournament, list[Game]]:
     input_dir = test_data_path / "input"
     output_dir = test_data_path / "output"
 
-    for input_path in input_dir.iterdir():
-        output_path = output_dir / input_path.name
+    with open(input_dir / name) as in_f, open(output_dir / name) as out_f:
+        tournament = Tournament.model_validate_json(in_f.read())
+        games = [Game.model_validate(item) for item in json.load(out_f)]
+        return tournament, games
 
-        with open(input_path) as in_f, open(output_path) as out_f:
-            yield json.load(in_f), json.load(out_f)
 
+@pytest.mark.parametrize("name", get_input_paths())
+def test_macmahon(name):
+    tournament, expected = load_data(name)
+    print(tournament)
 
-@pytest.mark.parametrize("input, output", load_data())
-def test_macmahon(input, output):
-    print()
-    print(input)
-    print(output)
+    mm = MacMahon(tournament.players, tournament.games, tournament.parameters)
+
+    for item in mm.make_pairing([p.player_id for p in tournament.players]):
+        assert item in expected

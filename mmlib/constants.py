@@ -12,7 +12,6 @@ class Weight(IntEnum):
 
 
 class GameResult(StrEnum):
-    UNKNOWN = "unknown"
     BOTH_WIN = "both_wins"
     WHITE_WINS = "white_wins"
     BLACK_WINS = "black_wins"

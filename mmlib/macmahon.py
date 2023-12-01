@@ -14,18 +14,21 @@ from mmlib.utils import (
 
 
 class GamesRepository:
-    def __init__(self, games: list[set[Game]]):
-        self.games = games
+    def __init__(self, games: list[list[Game]]):
+        self.data = games
+
+    def __len__(self) -> int:
+        return len(self.data)
 
     def _player_games(self, player_id: str) -> Iterator[Game]:
         return (
             game
-            for game in itertools.chain(*self.games)
+            for game in itertools.chain(*self.data)
             if game.has_played(player_id)
         )
 
     def game_in_round(self, player_id: str, round_number: int) -> Game | None:
-        for game in self.games[round_number]:
+        for game in self.data[round_number]:
             if game.has_played(player_id):
                 return game
 
@@ -36,14 +39,14 @@ class GamesRepository:
         )
 
 
-class ScoredPlayersRepository:
+class ScoresRepository:
     def __init__(
         self,
         players: list[Player],
-        games: GamesRepository,
-        round_number: int,
+        games: list[list[Game]],
     ):
-        self.data = {
+        games_repo = GamesRepository(games)
+        self.data: dict[str, ScoredPlayer] = {
             player.player_id: ScoredPlayer(
                 player_id=player.player_id,
                 rank=player.rank,
@@ -52,14 +55,14 @@ class ScoredPlayersRepository:
             for player in players
         }
 
-        for rn in range(1, round_number + 1):
+        for rn in range(1, len(games_repo) + 1):
             scored_players = {}
 
             for player in players:
                 player_id = player.player_id
                 sp = self.data[player_id].model_copy()
 
-                if game := games.game_in_round(player_id, rn - 1):
+                if game := games_repo.game_in_round(player_id, rn - 1):
                     opponent_id = game.opponent_id(player_id)
                     op = self.data[opponent_id]
 
@@ -72,7 +75,7 @@ class ScoredPlayersRepository:
                     sp.sos_x2 += op.score_x2
                     sp.sosos_x2 += op.sos_x2
                     sp.color_balance += game.color_balance(player_id)
-
+                    sp.opponent_ids.add(opponent_id)
                 else:
                     sp.skipped_x2 += 1
 
@@ -81,6 +84,9 @@ class ScoredPlayersRepository:
             self.data = scored_players
 
         self.score_groups = self._make_score_groups()
+
+    def __getitem__(self, item: str) -> ScoredPlayer:
+        return self.data[item]
 
     def _make_score_groups(self) -> list[int]:
         return sorted({sp.score_x2 for sp in self.data.values()}, reverse=True)
@@ -92,27 +98,24 @@ class ScoredPlayersRepository:
                 for scored_player in self.data.values()
                 if scored_player.score_x2 == score_x2
             ],
-            key=lambda sp: sp.placement_criteria,
+            key=lambda sp: sp.placement_criteria(),
         )
+
+    def have_played(self, player1_id: str, player2_id: str):
+        return player2_id in self.data[player1_id].opponent_ids
 
 
 class MacMahon:
     def __init__(
         self,
         players: list[Player],
-        games: list[set[Game]],
-        round_number: int,
+        games: list[list[Game]],
         parameters: Parameters,
     ):
-        self.games = GamesRepository(games)
+        self.scores = ScoresRepository(players, games)
         self.parameters = parameters
-        self.round_number = round_number
 
-        self.scored = ScoredPlayersRepository(
-            players, self.games, round_number
-        )
-
-    def make_pairing(self, to_match: list[str]) -> set[tuple[str, str]]:
+    def make_pairing(self, to_match: list[str]) -> list[Game]:
         assert len(to_match) % 2 == 0
 
         graph = nx.Graph()
@@ -121,22 +124,30 @@ class MacMahon:
             cost = self.calculate_cost(p1, p2)
             graph.add_edge(p1, p2, weight=cost)
 
-        return nx.max_weight_matching(graph, maxcardinality=True)
+        return sorted(
+            [
+                self.make_game(sp1=self.scores[p1_id], sp2=self.scores[p2_id])
+                for p1_id, p2_id in nx.max_weight_matching(
+                    graph, maxcardinality=True
+                )
+            ],
+            key=lambda game: game.black_id,
+        )
 
     def calculate_cost(self, player1_id: str, player2_id: str) -> float:
-        sp1 = self.scored.data[player1_id]
-        sp2 = self.scored.data[player2_id]
+        sp1 = self.scores[player1_id]
+        sp2 = self.scores[player2_id]
 
         cost = 1
         cost += self.unique_game_cost(sp1, sp2)
         cost += self.balance_color_cost(sp1, sp2)
         cost += self.score_difference_cost(sp1, sp2)
         cost += self.balance_seeding_cost(sp1, sp2)
-
+        print(sp1.player_id, sp2.player_id, cost)
         return cost
 
     def unique_game_cost(self, sp1: ScoredPlayer, sp2: ScoredPlayer) -> int:
-        if self.games.have_played(sp1.player_id, sp2.player_id):
+        if not self.scores.have_played(sp1.player_id, sp2.player_id):
             return Weight.unique_game_weight.value
         return 0
 
@@ -165,7 +176,7 @@ class MacMahon:
         sp1: ScoredPlayer,
         sp2: ScoredPlayer,
     ) -> float:
-        score_groups = self.scored.score_groups
+        score_groups = self.scores.score_groups
 
         p1_group = score_groups.index(sp1.score_x2)
         p2_group = score_groups.index(sp2.score_x2)
@@ -197,7 +208,7 @@ class MacMahon:
         return k * Weight.dudd_weight.value
 
     def _seeding_coefficient(self, sp1: ScoredPlayer, sp2: ScoredPlayer):
-        score_group = self.scored.score_group(sp1.score_x2)
+        score_group = self.scores.score_group(sp1.score_x2)
 
         p1_idx = score_group.index(sp1)
         p2_idx = score_group.index(sp2)
@@ -207,7 +218,7 @@ class MacMahon:
         return seeding_coefficient(p1_idx, p2_idx, group_size, mode)
 
     def _dudd_coefficient(self, sp: ScoredPlayer, mode: DUDDMode):
-        score_group = self.scored.score_group(sp.score_x2)
+        score_group = self.scores.score_group(sp.score_x2)
 
         place = score_group.index(sp)
         last = len(score_group) - 1

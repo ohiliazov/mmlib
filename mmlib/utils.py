@@ -14,7 +14,7 @@ def calculate_handicap(
 
 
 def dudd_coefficient(place: int, group_size: int, mode: DUDDMode) -> float:
-    if group_size == 0:
+    if group_size < 2:
         return 1
 
     match mode:
