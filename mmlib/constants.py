@@ -12,11 +12,9 @@ class Weight(IntEnum):
 
 
 class GameResult(StrEnum):
-    BOTH_WIN = "both_wins"
     WHITE_WINS = "white_wins"
     BLACK_WINS = "black_wins"
     DRAW = "draw"
-    BOTH_LOSE = "both_lose"
 
 
 class DUDDMode(StrEnum):

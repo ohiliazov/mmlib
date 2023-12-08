@@ -1,0 +1,14 @@
+{
+  "players": [
+    {"player_id":  "p1", "rank": 1, "smms_x2": 2},
+    {"player_id":  "p2", "rank": 1, "smms_x2": 2},
+    {"player_id":  "p3", "rank": 1, "smms_x2": 2},
+    {"player_id":  "p4", "rank": 1, "smms_x2": 2},
+    {"player_id":  "p5", "rank": -10, "smms_x2": 0},
+    {"player_id":  "p6", "rank": -10, "smms_x2": 0},
+    {"player_id":  "p7", "rank": -10, "smms_x2": 0},
+    {"player_id":  "p8", "rank": -10, "smms_x2": 0}
+  ],
+  "games": [],
+  "parameters": {}
+}

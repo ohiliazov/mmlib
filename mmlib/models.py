@@ -33,8 +33,6 @@ class Game(BaseModel):
             return 0
 
         match self.result:
-            case GameResult.BOTH_WIN:
-                return 2
             case GameResult.WHITE_WINS if self.white_id == player_id:
                 return 2
             case GameResult.BLACK_WINS if self.black_id == player_id:
@@ -62,13 +60,19 @@ class ScoredPlayer(Player):
     points_x2: int = 0
     skipped_x2: int = 0
 
+    @staticmethod
+    def _rounded_x2(value: int) -> int:
+        return value - value % 2
+
     @property
     def mms_x2(self):
-        return self.smms_x2 + self.points_x2
+        return self._rounded_x2(self.smms_x2 + self.points_x2)
 
     @property
     def score_x2(self):
-        return self.mms_x2 + self.skipped_x2
+        return self._rounded_x2(
+            self.smms_x2 + self.points_x2 + self.skipped_x2
+        )
 
     sos_x2: int = 0
     sosos_x2: int = 0

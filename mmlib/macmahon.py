@@ -143,7 +143,6 @@ class MacMahon:
         cost += self.balance_color_cost(sp1, sp2)
         cost += self.score_difference_cost(sp1, sp2)
         cost += self.balance_seeding_cost(sp1, sp2)
-        print(sp1.player_id, sp2.player_id, cost)
         return cost
 
     def unique_game_cost(self, sp1: ScoredPlayer, sp2: ScoredPlayer) -> int:

@@ -27,7 +27,6 @@ def load_data(name: str) -> tuple[Tournament, list[Game]]:
 @pytest.mark.parametrize("name", get_input_paths())
 def test_macmahon(name):
     tournament, expected = load_data(name)
-    print(tournament)
 
     mm = MacMahon(tournament.players, tournament.games, tournament.parameters)
 
