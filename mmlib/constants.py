@@ -1,14 +1,12 @@
 from enum import IntEnum, StrEnum
 
 
-# fmt: off
 class Weight(IntEnum):
     unique_game_weight = 500_000_000_000_000
-    score_weight =           100_000_000_000
-    dudd_weight =                100_000_000
-    seeding_weight =               5_000_000
-    color_weight =                 1_000_000
-# fmt:on
+    score_weight = 100_000_000_000
+    dudd_weight = 100_000_000
+    seeding_weight = 5_000_000
+    color_weight = 1_000_000
 
 
 class GameResult(StrEnum):
@@ -17,7 +15,7 @@ class GameResult(StrEnum):
     DRAW = "draw"
 
 
-class DUDDMode(StrEnum):
+class FloatingMode(StrEnum):
     """
     If set to TOP the first player will be prioritised to be drawn up/down.
     If set to MIDDLE the middle player will be prioritised to drawn up/down.

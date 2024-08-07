@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from mmlib.constants import DUDDMode, GameResult, SeedingMode
+from mmlib.constants import FloatingMode, GameResult, SeedingMode
 
 
 class Parameters(BaseModel):
@@ -8,8 +8,8 @@ class Parameters(BaseModel):
     hd_adj: int = 0
     hd_max: int = 0
     dudd_compensate: bool = True
-    du_mode: DUDDMode = DUDDMode.MIDDLE
-    dd_mode: DUDDMode = DUDDMode.MIDDLE
+    float_up_mode: FloatingMode = FloatingMode.MIDDLE
+    float_down_mode: FloatingMode = FloatingMode.MIDDLE
     seeding_mode: SeedingMode = SeedingMode.CROSS
 
 

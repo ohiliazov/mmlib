@@ -4,13 +4,11 @@ from typing import Iterator
 
 import networkx as nx
 
-from mmlib.constants import DUDDMode, Weight
+from mmlib.constants import FloatingMode, Weight
+from mmlib.floating import floating_coefficient
+from mmlib.handicap import calculate_handicap
 from mmlib.models import Game, Parameters, Player, ScoredPlayer
-from mmlib.utils import (
-    calculate_handicap,
-    dudd_coefficient,
-    seeding_coefficient,
-)
+from mmlib.seeding import seeding_coefficient
 
 
 class GamesRepository:
@@ -199,10 +197,12 @@ class MacMahon:
             sp1, sp2 = sp2, sp1
 
         scenario_coef = self._dudd_scenario(sp1, sp2)
-        du_coef = self._dudd_coefficient(sp1, self.parameters.du_mode)
-        dd_coef = self._dudd_coefficient(sp2, self.parameters.dd_mode)
+        float_up_coef = self._floating_coef(sp1, self.parameters.float_up_mode)
+        float_down_coef = self._floating_coef(
+            sp2, self.parameters.float_down_mode
+        )
 
-        k = (scenario_coef + du_coef + dd_coef) / 10
+        k = (scenario_coef + float_up_coef + float_down_coef) / 10
 
         return k * Weight.dudd_weight.value
 
@@ -216,13 +216,13 @@ class MacMahon:
 
         return seeding_coefficient(p1_idx, p2_idx, group_size, mode)
 
-    def _dudd_coefficient(self, sp: ScoredPlayer, mode: DUDDMode):
+    def _floating_coef(self, sp: ScoredPlayer, mode: FloatingMode):
         score_group = self.scores.score_group(sp.score_x2)
 
         place = score_group.index(sp)
         last = len(score_group) - 1
 
-        return dudd_coefficient(place, last, mode)
+        return floating_coefficient(place, last, mode)
 
     def _dudd_scenario(self, sp1: ScoredPlayer, sp2: ScoredPlayer) -> int:
         scenario = 2  # normal conditions
