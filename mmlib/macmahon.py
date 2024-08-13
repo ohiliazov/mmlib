@@ -222,7 +222,7 @@ class MacMahon:
         place = score_group.index(sp)
         last = len(score_group) - 1
 
-        return floating_coefficient(place, last, mode)
+        return floating_coefficient(mode, place, last)
 
     def _dudd_scenario(self, sp1: ScoredPlayer, sp2: ScoredPlayer) -> int:
         scenario = 2  # normal conditions
