@@ -33,7 +33,7 @@ def floating_top(place: int, group_size: int) -> float:
 def floating_middle(place: int, group_size: int) -> float:
     _validate_floating_arguments(place, group_size)
 
-    if group_size < 2:
+    if group_size <= 2:
         return 1
 
     mid = (group_size - 1) // 2

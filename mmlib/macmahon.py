@@ -220,9 +220,9 @@ class MacMahon:
         score_group = self.scores.score_group(sp.score_x2)
 
         place = score_group.index(sp)
-        last = len(score_group) - 1
+        size = len(score_group)
 
-        return floating_coefficient(mode, place, last)
+        return floating_coefficient(mode, place, size)
 
     def _dudd_scenario(self, sp1: ScoredPlayer, sp2: ScoredPlayer) -> int:
         scenario = 2  # normal conditions

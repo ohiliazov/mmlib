@@ -50,12 +50,15 @@ def seeding_coefficient(
     size: int,
     mode: SeedingMode,
 ) -> float:
+    if p1_idx > p2_idx:
+        p1_idx, p2_idx = p2_idx, p1_idx
+
     match mode:
-        case SeedingMode.CROSS if size > 3:
+        case SeedingMode.CROSS:
             return seeding_cross(p1_idx, p2_idx, size)
-        case SeedingMode.FOLD if size > 2:
+        case SeedingMode.FOLD:
             return seeding_fold(p1_idx, p2_idx, size)
-        case SeedingMode.ADJACENT if size > 2:
+        case SeedingMode.ADJACENT:
             return seeding_adjacent(p1_idx, p2_idx, size)
         case _:
             raise ValueError(f"Unknown seeding mode: {mode}")
