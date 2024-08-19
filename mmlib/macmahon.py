@@ -1,6 +1,6 @@
 import itertools
 import random
-from typing import Iterator
+from collections import defaultdict
 
 import networkx as nx
 
@@ -12,29 +12,16 @@ from mmlib.seeding import seeding_coefficient
 
 
 class GamesRepository:
-    def __init__(self, games: list[list[Game]]):
-        self.data = games
+    def __init__(self, games: list[list[Game]]) -> None:
+        self.data = defaultdict(dict)
 
-    def __len__(self) -> int:
-        return len(self.data)
+        for rn, round_games in enumerate(games):
+            for game in round_games:
+                self.data[rn][game.black_id] = game
+                self.data[rn][game.white_id] = game
 
-    def _player_games(self, player_id: str) -> Iterator[Game]:
-        return (
-            game
-            for game in itertools.chain(*self.data)
-            if game.has_played(player_id)
-        )
-
-    def game_in_round(self, player_id: str, round_number: int) -> Game | None:
-        for game in self.data[round_number]:
-            if game.has_played(player_id):
-                return game
-
-    def have_played(self, player1_id: str, player2_id: str):
-        return any(
-            game.has_played(player2_id)
-            for game in self._player_games(player1_id)
-        )
+    def get_game(self, player_id: str, round_number: int) -> Game | None:
+        return self.data[round_number].get(player_id)
 
 
 class ScoresRepository:
@@ -49,29 +36,33 @@ class ScoresRepository:
                 player_id=player.player_id,
                 rank=player.rank,
                 smms_x2=player.smms_x2,
+                mms_x2=player.smms_x2,
+                score_x2=player.smms_x2,
             )
             for player in players
         }
 
-        for rn in range(1, len(games_repo) + 1):
+        for round_number in range(len(games)):
             scored_players = {}
 
             for player in players:
                 player_id = player.player_id
                 sp = self.data[player_id].model_copy()
 
-                if game := games_repo.game_in_round(player_id, rn - 1):
+                if game := games_repo.get_game(player_id, round_number):
                     opponent_id = game.opponent_id(player_id)
-                    op = self.data[opponent_id]
+                    opponent = self.data[opponent_id]
 
-                    if sp.score_x2 < op.score_x2:
+                    if sp.score_x2 < opponent.score_x2:
                         sp.draw_ups += 1
-                    if sp.score_x2 > op.score_x2:
+                    if sp.score_x2 > opponent.score_x2:
                         sp.draw_downs += 1
 
                     sp.points_x2 += game.points_x2(player_id)
-                    sp.sos_x2 += op.score_x2
-                    sp.sosos_x2 += op.sos_x2
+                    sp.mms_x2 = sp.get_mms_x2()
+                    sp.score_x2 = sp.get_score_x2()
+                    sp.sos_x2 += opponent.score_x2
+                    sp.sosos_x2 += opponent.sos_x2
                     sp.color_balance += game.color_balance(player_id)
                     sp.opponent_ids.add(opponent_id)
                 else:

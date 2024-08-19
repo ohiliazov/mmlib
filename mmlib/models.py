@@ -59,31 +59,29 @@ class Game(BaseModel):
 class ScoredPlayer(Player):
     points_x2: int = 0
     skipped_x2: int = 0
-
-    @staticmethod
-    def _rounded_x2(value: int) -> int:
-        return value - value % 2
-
-    @property
-    def mms_x2(self):
-        return self._rounded_x2(self.smms_x2 + self.points_x2)
-
-    @property
-    def score_x2(self):
-        return self._rounded_x2(
-            self.smms_x2 + self.points_x2 + self.skipped_x2
-        )
-
+    mms_x2: int = 0
+    score_x2: int = 0
     sos_x2: int = 0
     sosos_x2: int = 0
-
     draw_ups: int = 0
     draw_downs: int = 0
     color_balance: int = 0
     opponent_ids: set = Field(default_factory=set)
 
+    @staticmethod
+    def _rounded_x2(value: int) -> int:
+        return value - value % 2
+
+    def get_mms_x2(self):
+        return self._rounded_x2(self.smms_x2 + self.points_x2)
+
+    def get_score_x2(self):
+        return self._rounded_x2(
+            self.smms_x2 + self.points_x2 + self.skipped_x2
+        )
+
     def placement_criteria(self):
-        return -self.mms_x2, -self.sos_x2, -self.sosos_x2, self.player_id
+        return -self.mms_x2, -self.sos_x2, -self.sosos_x2
 
 
 class Tournament(BaseModel):
