@@ -68,6 +68,16 @@ class ScoredPlayer(Player):
     color_balance: int = 0
     opponent_ids: set = Field(default_factory=set)
 
+    @classmethod
+    def from_player(cls, player: Player) -> "ScoredPlayer":
+        return cls(
+            player_id=player.player_id,
+            rank=player.rank,
+            smms_x2=player.smms_x2,
+            mms_x2=player.smms_x2,
+            score_x2=player.smms_x2,
+        )
+
     @staticmethod
     def _rounded_x2(value: int) -> int:
         return value - value % 2
