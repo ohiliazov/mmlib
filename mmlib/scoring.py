@@ -31,15 +31,21 @@ def make_scored_players(
         for player in players:
             player_id = player.player_id
             sp = result[player_id].model_copy()
+            scored_players[player_id] = sp
+
+            if sp.is_bye:
+                # bye players don't get points
+                continue
 
             if game := games_repo.get_game(player_id, round_number):
                 opponent_id = game.opponent_id(player_id)
                 opponent = result[opponent_id]
 
-                if sp.score_x2 < opponent.score_x2:
-                    sp.draw_ups += 1
-                if sp.score_x2 > opponent.score_x2:
-                    sp.draw_downs += 1
+                if not opponent.is_bye:
+                    if sp.score_x2 < opponent.score_x2:
+                        sp.draw_ups += 1
+                    if sp.score_x2 > opponent.score_x2:
+                        sp.draw_downs += 1
 
                 sp.points_x2 += game.points_x2(player_id)
                 sp.mms_x2 = sp.get_mms_x2()
@@ -50,8 +56,6 @@ def make_scored_players(
                 sp.opponent_ids.add(opponent_id)
             else:
                 sp.skipped_x2 += 1
-
-            scored_players[player_id] = sp
 
         result = scored_players
 

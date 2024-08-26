@@ -15,14 +15,15 @@ class Parameters(BaseModel):
 
 class Player(BaseModel):
     player_id: str
-    rank: int
-    smms_x2: int
+    rank: int = 0
+    smms_x2: int = 0
+    is_bye: bool = False
 
 
 class Game(BaseModel):
     black_id: str
     white_id: str
-    handicap: int
+    handicap: int = 0
     result: GameResult | None = None
 
     def has_played(self, player_id: str) -> bool:
