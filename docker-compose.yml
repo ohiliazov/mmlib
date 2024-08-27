@@ -1,0 +1,15 @@
+services:
+  test:
+    build:
+      context: .
+    volumes:
+      - .:/code
+    command: >
+      sh -c "pytest -v -p no:cacheprovider"
+  lint:
+    build:
+      context: .
+    volumes:
+      - .:/code
+    command: >
+      sh -c "ruff check --no-cache"

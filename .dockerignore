@@ -1,0 +1,13 @@
+.docker/
+.idea/
+.git/
+.venv/
+.gitignore
+.pre-commit-config.yaml
+docker-compose.yml
+Dockerfile
+Justfile
+poetry.toml
+ruff.toml
+**/__pycache__/
+docs/
