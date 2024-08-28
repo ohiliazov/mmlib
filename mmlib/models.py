@@ -16,7 +16,7 @@ class Parameters(BaseModel):
 class Player(BaseModel):
     player_id: str
     rank: int = 0
-    smms_x2: int = 0
+    smms: int = 0
     is_bye: bool = False
 
 
@@ -29,17 +29,17 @@ class Game(BaseModel):
     def has_played(self, player_id: str) -> bool:
         return player_id == self.black_id or player_id == self.white_id
 
-    def points_x2(self, player_id: str) -> int:
+    def points(self, player_id: str) -> float:
         if not self.has_played(player_id):
             return 0
 
         match self.result:
             case GameResult.WHITE_WINS if self.white_id == player_id:
-                return 2
-            case GameResult.BLACK_WINS if self.black_id == player_id:
-                return 2
-            case GameResult.DRAW:
                 return 1
+            case GameResult.BLACK_WINS if self.black_id == player_id:
+                return 1
+            case GameResult.DRAW:
+                return 0.5
         return 0
 
     def opponent_id(self, player_id: str) -> str | None:
@@ -58,12 +58,8 @@ class Game(BaseModel):
 
 
 class ScoredPlayer(Player):
-    points_x2: int = 0
-    skipped_x2: int = 0
-    mms_x2: int = 0
-    score_x2: int = 0
-    sos_x2: int = 0
-    sosos_x2: int = 0
+    points: float = 0.0
+    skips: int = 0
     draw_ups: int = 0
     draw_downs: int = 0
     color_balance: int = 0
@@ -74,25 +70,21 @@ class ScoredPlayer(Player):
         return cls(
             player_id=player.player_id,
             rank=player.rank,
-            smms_x2=player.smms_x2,
-            mms_x2=player.smms_x2,
-            score_x2=player.smms_x2,
+            smms=player.smms,
+            mms=player.smms,
+            score=player.smms,
         )
 
-    @staticmethod
-    def _rounded_x2(value: int) -> int:
-        return value - value % 2
+    @property
+    def mms(self):
+        return self.smms + int(self.points)
 
-    def get_mms_x2(self):
-        return self._rounded_x2(self.smms_x2 + self.points_x2)
-
-    def get_score_x2(self):
-        return self._rounded_x2(
-            self.smms_x2 + self.points_x2 + self.skipped_x2
-        )
+    @property
+    def score(self):
+        return self.smms + int(self.points + self.skips / 2)
 
     def placement_criteria(self):
-        return -self.mms_x2, -self.sos_x2, -self.sosos_x2
+        return -self.mms
 
 
 class Tournament(BaseModel):

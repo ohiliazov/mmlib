@@ -83,8 +83,8 @@ class MacMahon:
     ) -> float:
         score_groups = self.scores.score_groups
 
-        p1_group = score_groups.index(sp1.score_x2)
-        p2_group = score_groups.index(sp2.score_x2)
+        p1_group = score_groups.index(sp1.score)
+        p2_group = score_groups.index(sp2.score)
 
         x = abs(p1_group - p2_group) / len(score_groups)
         return (1 - x) * (1 + x / 2) * Weight.score_weight.value
@@ -94,14 +94,14 @@ class MacMahon:
         sp1: ScoredPlayer,
         sp2: ScoredPlayer,
     ) -> float:
-        if sp1.score_x2 == sp2.score_x2:
+        if sp1.score == sp2.score:
             k = self._seeding_coefficient(sp1, sp2)
             return k * Weight.seeding_weight.value
 
-        if abs(sp1.score_x2 - sp2.score_x2) > 3:
+        if abs(sp1.score - sp2.score) >= 1.5:
             return 0
 
-        if sp1.score_x2 > sp2.score_x2:
+        if sp1.score > sp2.score:
             sp1, sp2 = sp2, sp1
 
         scenario_coef = self._dudd_scenario(sp1, sp2)
@@ -115,7 +115,7 @@ class MacMahon:
         return k * Weight.dudd_weight.value
 
     def _seeding_coefficient(self, sp1: ScoredPlayer, sp2: ScoredPlayer):
-        score_group = self.scores.score_group(sp1.score_x2)
+        score_group = self.scores.score_group(sp1.score)
 
         p1_idx = score_group.index(sp1)
         p2_idx = score_group.index(sp2)
@@ -125,7 +125,7 @@ class MacMahon:
         return seeding_coefficient(p1_idx, p2_idx, group_size, mode)
 
     def _floating_coef(self, sp: ScoredPlayer, mode: FloatingMode):
-        score_group = self.scores.score_group(sp.score_x2)
+        score_group = self.scores.score_group(sp.score)
 
         place = score_group.index(sp)
         size = len(score_group)
