@@ -83,9 +83,6 @@ class ScoredPlayer(Player):
     def score(self):
         return self.smms + int(self.points + self.skips / 2)
 
-    def placement_criteria(self):
-        return -self.mms
-
 
 class Tournament(BaseModel):
     players: list[Player]

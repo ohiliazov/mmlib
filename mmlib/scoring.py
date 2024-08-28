@@ -95,7 +95,8 @@ class ScoresRepository:
                 for scored_player in self.data.values()
                 if scored_player.score == score
             ],
-            key=lambda sp: (sp.score, sp.rank),
+            key=lambda sp: (-sp.mms, -sp.rank),
+            reverse=True,
         )
 
     def have_played(self, player1_id: str, player2_id: str):

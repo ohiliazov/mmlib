@@ -139,14 +139,11 @@ class MacMahon:
         if sp2.draw_downs:
             scenario -= 1  # avoid drawing down the same player
 
-        if scenario > 0:
+        if scenario != 0 and self.parameters.dudd_compensate:
             if sp1.draw_ups < sp1.draw_downs:
                 scenario += 1  # correct draw-ups for sp1
             if sp2.draw_downs < sp2.draw_ups:
                 scenario += 1  # correct draw-downs for sp2
-
-        if scenario > 2 and not self.parameters.dudd_compensate:
-            scenario = 2
 
         return scenario * 2
 
