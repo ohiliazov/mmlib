@@ -1,60 +1,50 @@
-from collections import defaultdict
-
 from mmlib.models import Game, Player, ScoredPlayer
-
-
-class GamesRepository:
-    def __init__(self, games: list[list[Game]]) -> None:
-        self.data = defaultdict(dict)
-
-        for rn, round_games in enumerate(games):
-            for game in round_games:
-                self.data[rn][game.black_id] = game
-                self.data[rn][game.white_id] = game
-
-    def get_game(self, player_id: str, round_number: int) -> Game | None:
-        return self.data[round_number].get(player_id)
 
 
 def make_scored_players(
     players: list[Player], all_games: list[list[Game]]
 ) -> dict[str, ScoredPlayer]:
-    games_repo = GamesRepository(all_games)
-    result: dict[str, ScoredPlayer] = {
+    scored_players: dict[str, ScoredPlayer] = {
         player.player_id: ScoredPlayer.from_player(player)
         for player in players
     }
 
-    for round_number in range(len(all_games)):
-        scored_players = {}
-        for player in players:
-            player_id = player.player_id
-            sp: ScoredPlayer = result[player_id].model_copy()
-            scored_players[player_id] = sp
+    for round_games in all_games:
+        skipped_player_ids = set(scored_players)
+        for game in round_games:
+            black_id = game.black_id
+            white_id = game.white_id
 
-            if sp.is_bye:
-                # bye players don't get points
-                continue
+            black = scored_players[black_id]
+            white = scored_players[white_id]
 
-            if game := games_repo.get_game(player_id, round_number):
-                opponent_id = game.opponent_id(player_id)
-                opponent = result[opponent_id]
+            if not black.is_bye and not white.is_bye:
+                black.color_balance += game.color_balance(black_id)
+                white.color_balance += game.color_balance(white_id)
 
-                if not opponent.is_bye:
-                    if sp.score < opponent.score:
-                        sp.draw_ups += 1
-                    if sp.score > opponent.score:
-                        sp.draw_downs += 1
+                if black.score < white.score:
+                    black.draw_ups += 1
+                    white.draw_downs += 1
+                elif black.score > white.score:
+                    black.draw_downs += 1
+                    white.draw_ups += 1
 
-                sp.points += game.points(player_id)
-                sp.color_balance += game.color_balance(player_id)
-                sp.opponent_ids.add(opponent_id)
-            else:
-                sp.skips += 1
+            if not black.is_bye:
+                black.points += game.points(black_id)
 
-        result = scored_players
+            if not white.is_bye:
+                white.points += game.points(white_id)
 
-    return result
+            skipped_player_ids -= {black_id, white_id}
+
+            black.opponent_ids.add(white_id)
+            white.opponent_ids.add(black_id)
+
+        for skipped_player_id in skipped_player_ids:
+            skipped_player = scored_players[skipped_player_id]
+            skipped_player.skips += 1
+
+    return scored_players
 
 
 class ScoresRepository:
