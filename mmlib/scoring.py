@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from mmlib.models import Game, Player, ScoredPlayer
 
 
@@ -55,6 +57,8 @@ class ScoresRepository:
     ):
         self.data = make_scored_players(players, games)
         self.score_groups = self._make_score_groups()
+        self.sos_scores = self._make_sos_scores()
+        self.sosos_scores = self._make_sosos_scores()
 
     def __getitem__(self, item: str) -> ScoredPlayer:
         return self.data[item]
@@ -62,13 +66,27 @@ class ScoresRepository:
     def _make_score_groups(self) -> list[int]:
         return sorted({sp.score for sp in self.data.values()}, reverse=True)
 
-    def sos(self, sp: ScoredPlayer) -> int:
-        return sum(
-            self.data[opponent_id].score
-            if not self.data[opponent_id].is_bye
-            else sp.score - 1
-            for opponent_id in sp.opponent_ids
-        )
+    def _make_sos_scores(self) -> dict[str, int]:
+        sos_scores = defaultdict(int)
+        for player_id, scored_player in self.data.items():
+            for opponent_id in scored_player.opponent_ids:
+                opponent = self.data[opponent_id]
+                if opponent.is_bye:
+                    sos_scores[player_id] += scored_player.score
+                else:
+                    sos_scores[player_id] += opponent.score
+        return sos_scores
+
+    def _make_sosos_scores(self) -> dict[str, int]:
+        sosos_scores = defaultdict(int)
+        for player_id, scored_player in self.data.items():
+            for opponent_id in scored_player.opponent_ids:
+                opponent = self.data[opponent_id]
+                if opponent.is_bye:
+                    sosos_scores[player_id] += self.sos_scores[player_id]
+                else:
+                    sosos_scores[player_id] += self.sos_scores[opponent_id]
+        return sosos_scores
 
     def score_group(self, score: int) -> list[ScoredPlayer]:
         return sorted(
