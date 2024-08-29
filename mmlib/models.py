@@ -63,7 +63,10 @@ class ScoredPlayer(Player):
     draw_ups: int = 0
     draw_downs: int = 0
     color_balance: int = 0
-    opponent_ids: set = Field(default_factory=set)
+    sos: int = 0
+    sosos: int = 0
+    sodos: int = 0
+    games: list[Game] = Field(default_factory=list)
 
     @classmethod
     def from_player(cls, player: Player) -> "ScoredPlayer":

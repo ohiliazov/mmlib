@@ -1,5 +1,3 @@
-from collections import defaultdict
-
 from mmlib.models import Game, Player, ScoredPlayer
 
 
@@ -39,12 +37,34 @@ def make_scored_players(
 
             skipped_player_ids -= {black_id, white_id}
 
-            black.opponent_ids.add(white_id)
-            white.opponent_ids.add(black_id)
+            black.games.append(game)
+            white.games.append(game)
 
         for skipped_player_id in skipped_player_ids:
             skipped_player = scored_players[skipped_player_id]
             skipped_player.skips += 1
+
+    # SOS
+    for player_id, scored_player in scored_players.items():
+        for game in scored_player.games:
+            opponent = scored_players[game.opponent_id(player_id)]
+            if opponent.is_bye:
+                scored_player.sos += scored_player.score
+                if game.points(player_id) == 2:
+                    scored_player.sodos += scored_player.score
+            else:
+                scored_player.sos += opponent.score
+                if game.points(player_id) == 2:
+                    scored_player.sodos += scored_player.score
+
+    # SOSOS
+    for player_id, scored_player in scored_players.items():
+        for game in scored_player.games:
+            opponent = scored_players[game.opponent_id(player_id)]
+            if opponent.is_bye:
+                scored_player.sosos += scored_player.sos
+            else:
+                scored_player.sosos += opponent.sos
 
     return scored_players
 
@@ -57,36 +77,12 @@ class ScoresRepository:
     ):
         self.data = make_scored_players(players, games)
         self.score_groups = self._make_score_groups()
-        self.sos_scores = self._make_sos_scores()
-        self.sosos_scores = self._make_sosos_scores()
 
     def __getitem__(self, item: str) -> ScoredPlayer:
         return self.data[item]
 
     def _make_score_groups(self) -> list[int]:
         return sorted({sp.score for sp in self.data.values()}, reverse=True)
-
-    def _make_sos_scores(self) -> dict[str, int]:
-        sos_scores = defaultdict(int)
-        for player_id, scored_player in self.data.items():
-            for opponent_id in scored_player.opponent_ids:
-                opponent = self.data[opponent_id]
-                if opponent.is_bye:
-                    sos_scores[player_id] += scored_player.score
-                else:
-                    sos_scores[player_id] += opponent.score
-        return sos_scores
-
-    def _make_sosos_scores(self) -> dict[str, int]:
-        sosos_scores = defaultdict(int)
-        for player_id, scored_player in self.data.items():
-            for opponent_id in scored_player.opponent_ids:
-                opponent = self.data[opponent_id]
-                if opponent.is_bye:
-                    sosos_scores[player_id] += self.sos_scores[player_id]
-                else:
-                    sosos_scores[player_id] += self.sos_scores[opponent_id]
-        return sosos_scores
 
     def score_group(self, score: int) -> list[ScoredPlayer]:
         return sorted(
@@ -100,4 +96,7 @@ class ScoresRepository:
         )
 
     def have_played(self, player1_id: str, player2_id: str):
-        return player2_id in self.data[player1_id].opponent_ids
+        return any(
+            game.opponent_id(player1_id) == player2_id
+            for game in self.data[player1_id].games
+        )
