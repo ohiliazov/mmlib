@@ -44,15 +44,15 @@ def make_scored_players(
             skipped_player = scored_players[skipped_player_id]
             skipped_player.skips += 1
 
+        # update score after each round for correct draw-up/draw-down counting
+        for player_id, scored_player in scored_players.items():
+            scored_player.score = scored_player.smms + int(
+                scored_player.points + scored_player.skips / 2
+            )
+
     # MMS
     for player_id, scored_player in scored_players.items():
         scored_player.mms = scored_player.smms + int(scored_player.points)
-
-    # Score
-    for player_id, scored_player in scored_players.items():
-        scored_player.score = scored_player.smms + int(
-            scored_player.points + scored_player.skips / 2
-        )
 
     # SOS
     for player_id, scored_player in scored_players.items():
