@@ -63,6 +63,8 @@ class ScoredPlayer(Player):
     draw_ups: int = 0
     draw_downs: int = 0
     color_balance: int = 0
+    mms: int = 0
+    score: int = 0
     sos: int = 0
     sosos: int = 0
     sodos: int = 0
@@ -77,14 +79,6 @@ class ScoredPlayer(Player):
             mms=player.smms,
             score=player.smms,
         )
-
-    @property
-    def mms(self):
-        return self.smms + int(self.points)
-
-    @property
-    def score(self):
-        return self.smms + int(self.points + self.skips / 2)
 
 
 class Tournament(BaseModel):
