@@ -52,7 +52,7 @@ class MacMahon:
         return cost
 
     def unique_game_cost(self, sp1: ScoredPlayer, sp2: ScoredPlayer) -> int:
-        if not self.scores.have_played(sp1.player_id, sp2.player_id):
+        if not self.scores.have_played(sp1, sp2):
             return Weight.unique_game_weight.value
         return 0
 

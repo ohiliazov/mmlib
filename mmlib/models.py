@@ -24,37 +24,7 @@ class Game(BaseModel):
     black_id: str
     white_id: str
     handicap: int = 0
-    result: GameResult | None = None
-
-    def has_played(self, player_id: str) -> bool:
-        return player_id == self.black_id or player_id == self.white_id
-
-    def points(self, player_id: str) -> float:
-        if not self.has_played(player_id):
-            return 0
-
-        match self.result:
-            case GameResult.WHITE_WINS if self.white_id == player_id:
-                return 1
-            case GameResult.BLACK_WINS if self.black_id == player_id:
-                return 1
-            case GameResult.DRAW:
-                return 0.5
-        return 0
-
-    def opponent_id(self, player_id: str) -> str | None:
-        if self.white_id == player_id:
-            return self.black_id
-        if self.black_id == player_id:
-            return self.white_id
-
-    def color_balance(self, player_id: str) -> int:
-        if self.handicap == 0:
-            if self.black_id == player_id:
-                return -1
-            if self.white_id == player_id:
-                return 1
-        return 0
+    result: GameResult = GameResult.UNKNOWN
 
 
 class ScoredPlayer(Player):
@@ -68,7 +38,13 @@ class ScoredPlayer(Player):
     sos: int = 0
     sosos: int = 0
     sodos: int = 0
-    games: list[Game] = Field(default_factory=list)
+    games: list["ScoredGame"] = Field(default_factory=list)
+
+    def __hash__(self) -> int:
+        return hash(self.player_id)
+
+    def __eq__(self, other: "ScoredPlayer") -> bool:
+        return self.player_id == other.player_id
 
     @classmethod
     def from_player(cls, player: Player) -> "ScoredPlayer":
@@ -79,6 +55,80 @@ class ScoredPlayer(Player):
             mms=player.smms,
             score=player.smms,
         )
+
+
+class ScoredGame(BaseModel):
+    black: ScoredPlayer
+    white: ScoredPlayer
+    handicap: int
+    result: GameResult
+
+    @classmethod
+    def from_game(
+        cls, game: Game, black: ScoredPlayer, white: ScoredPlayer
+    ) -> "ScoredGame":
+        return ScoredGame(
+            black=black,
+            white=white,
+            handicap=game.handicap,
+            result=game.result,
+        )
+
+    def _verify_player(self, player: ScoredPlayer) -> None:
+        if player not in (self.black, self.white):
+            raise ValueError(f"Player {player} is not black or white.")
+
+    def is_black(self, player: ScoredPlayer) -> bool:
+        return self.black == player
+
+    def is_white(self, player: ScoredPlayer) -> bool:
+        return self.white == player
+
+    def points(self, player: ScoredPlayer) -> float:
+        self._verify_player(player)
+
+        if player.is_bye:
+            return 0
+
+        if self.opponent(player).is_bye:
+            return 1
+
+        match self.result:
+            case GameResult.WHITE_WINS if self.is_white(player):
+                return 1
+            case GameResult.BLACK_WINS if self.is_black(player):
+                return 1
+            case GameResult.DRAW:
+                return 0.5
+        return 0
+
+    def opponent(self, player: ScoredPlayer) -> ScoredPlayer:
+        self._verify_player(player)
+        return self.black if self.is_white(player) else self.white
+
+    def color_balance(self, player: ScoredPlayer) -> int:
+        self._verify_player(player)
+
+        if self.black.is_bye or self.white.is_bye or self.handicap:
+            return 0
+
+        return -1 if self.black == player else 1
+
+    def draw_ups(self, player: ScoredPlayer) -> int:
+        self._verify_player(player)
+
+        if self.black.is_bye or self.white.is_bye:
+            return 0
+
+        return int(player.score < self.opponent(player).score)
+
+    def draw_downs(self, player: ScoredPlayer) -> int:
+        self._verify_player(player)
+
+        if self.black.is_bye or self.white.is_bye:
+            return 0
+
+        return int(player.score > self.opponent(player).score)
 
 
 class Tournament(BaseModel):

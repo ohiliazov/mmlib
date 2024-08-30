@@ -1,80 +1,67 @@
-from mmlib.models import Game, Player, ScoredPlayer
+from mmlib.models import Game, Player, ScoredGame, ScoredPlayer
 
 
 def make_scored_players(
     players: list[Player], all_games: list[list[Game]]
 ) -> dict[str, ScoredPlayer]:
-    scored_players: dict[str, ScoredPlayer] = {
+    scored_players = {
         player.player_id: ScoredPlayer.from_player(player)
         for player in players
     }
 
     for round_games in all_games:
-        skipped_player_ids = set(scored_players)
+        next_scored_players = {
+            player_id: scored_player.copy()
+            for player_id, scored_player in scored_players.items()
+        }
+
+        scored_games = {}
         for game in round_games:
-            black_id = game.black_id
-            white_id = game.white_id
-
-            black = scored_players[black_id]
-            white = scored_players[white_id]
-
-            if not black.is_bye and not white.is_bye:
-                black.color_balance += game.color_balance(black_id)
-                white.color_balance += game.color_balance(white_id)
-
-                if black.score < white.score:
-                    black.draw_ups += 1
-                    white.draw_downs += 1
-                elif black.score > white.score:
-                    black.draw_downs += 1
-                    white.draw_ups += 1
-
-            if not black.is_bye:
-                black.points += game.points(black_id)
-
-            if not white.is_bye:
-                white.points += game.points(white_id)
-
-            skipped_player_ids -= {black_id, white_id}
-
-            black.games.append(game)
-            white.games.append(game)
-
-        for skipped_player_id in skipped_player_ids:
-            skipped_player = scored_players[skipped_player_id]
-            skipped_player.skips += 1
-
-        # update score after each round for correct draw-up/draw-down counting
-        for player_id, scored_player in scored_players.items():
-            scored_player.score = scored_player.smms + int(
-                scored_player.points + scored_player.skips / 2
+            scored_game = ScoredGame.from_game(
+                game=game,
+                black=scored_players[game.black_id],
+                white=scored_players[game.white_id],
             )
+            scored_games[game.black_id] = scored_game
+            scored_games[game.white_id] = scored_game
+
+        for player_id, sp in next_scored_players.items():
+            if sg := scored_games.get(player_id):
+                sp.color_balance += sg.color_balance(sp)
+                sp.draw_ups += sg.draw_ups(sp)
+                sp.draw_downs += sg.draw_downs(sp)
+                sp.points += sg.points(sp)
+                sp.score = sp.smms + int(sp.points + sp.skips / 2)
+                sp.games.append(sg)
+            else:
+                sp.skips += 1
+        scored_players = next_scored_players
 
     # MMS
-    for player_id, scored_player in scored_players.items():
-        scored_player.mms = scored_player.smms + int(scored_player.points)
+    for player_id, sp in scored_players.items():
+        sp.mms = sp.smms + int(sp.points)
 
     # SOS
-    for player_id, scored_player in scored_players.items():
-        for game in scored_player.games:
-            opponent = scored_players[game.opponent_id(player_id)]
+    for player_id, sp in scored_players.items():
+        for game in sp.games:
+            opponent = scored_players[game.opponent(sp).player_id]
             if opponent.is_bye:
-                scored_player.sos += scored_player.score
-                if game.points(player_id) == 2:
-                    scored_player.sodos += scored_player.score
+                sp.sos += sp.score
+                if game.points(sp) == 2:
+                    sp.sodos += sp.score
             else:
-                scored_player.sos += opponent.score
-                if game.points(player_id) == 2:
-                    scored_player.sodos += scored_player.score
+                sp.sos += opponent.score
+                if game.points(sp) == 2:
+                    sp.sodos += sp.score
 
     # SOSOS
-    for player_id, scored_player in scored_players.items():
-        for game in scored_player.games:
-            opponent = scored_players[game.opponent_id(player_id)]
+    for player_id, sp in scored_players.items():
+        for game in sp.games:
+            opponent = scored_players[game.opponent(sp).player_id]
             if opponent.is_bye:
-                scored_player.sosos += scored_player.sos
+                sp.sosos += sp.sos
             else:
-                scored_player.sosos += opponent.sos
+                sp.sosos += opponent.sos
 
     return scored_players
 
@@ -105,8 +92,5 @@ class ScoresRepository:
             reverse=True,
         )
 
-    def have_played(self, player1_id: str, player2_id: str):
-        return any(
-            game.opponent_id(player1_id) == player2_id
-            for game in self.data[player1_id].games
-        )
+    def have_played(self, sp1: ScoredPlayer, sp2: ScoredPlayer):
+        return any(sg.opponent(sp1) == sp2 for sg in sp1.games)
