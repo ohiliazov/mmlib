@@ -32,9 +32,6 @@ class ScoredPlayer(Player):
     skips: int = 0
     draw_ups: int = 0
     draw_downs: int = 0
-    color_balance: int = 0
-    mms: int = 0
-    score: int = 0
     sos: int = 0
     sosos: int = 0
     sodos: int = 0
@@ -52,9 +49,31 @@ class ScoredPlayer(Player):
             player_id=player.player_id,
             rank=player.rank,
             smms=player.smms,
-            mms=player.smms,
-            score=player.smms,
         )
+
+    def add_round(self, sg: "ScoredGame | None") -> "ScoredPlayer":
+        if sg is None:
+            return self.model_copy(update={"skips": self.skips + 1})
+        return self.model_copy(
+            update={
+                "draw_ups": self.draw_ups + sg.draw_ups(self),
+                "draw_downs": self.draw_downs + sg.draw_downs(self),
+                "points": self.points + sg.points(self),
+                "games": self.games + [sg],
+            },
+        )
+
+    @property
+    def mms(self) -> int:
+        return self.smms + int(self.points)
+
+    @property
+    def score(self) -> int:
+        return self.smms + int(self.points + self.skips / 2)
+
+    @property
+    def color_balance(self):
+        return sum(game.color_balance(self) for game in self.games)
 
 
 class ScoredGame(BaseModel):

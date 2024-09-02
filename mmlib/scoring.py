@@ -10,11 +10,6 @@ def make_scored_players(
     }
 
     for round_games in all_games:
-        next_scored_players = {
-            player_id: scored_player.copy()
-            for player_id, scored_player in scored_players.items()
-        }
-
         scored_games = {}
         for game in round_games:
             scored_game = ScoredGame.from_game(
@@ -25,21 +20,12 @@ def make_scored_players(
             scored_games[game.black_id] = scored_game
             scored_games[game.white_id] = scored_game
 
-        for player_id, sp in next_scored_players.items():
-            if sg := scored_games.get(player_id):
-                sp.color_balance += sg.color_balance(sp)
-                sp.draw_ups += sg.draw_ups(sp)
-                sp.draw_downs += sg.draw_downs(sp)
-                sp.points += sg.points(sp)
-                sp.score = sp.smms + int(sp.points + sp.skips / 2)
-                sp.games.append(sg)
-            else:
-                sp.skips += 1
-        scored_players = next_scored_players
+        next_scored_players = {}
+        for player_id, sp in scored_players.items():
+            sg = scored_games.get(player_id)
+            next_scored_players[player_id] = sp.add_round(sg)
 
-    # MMS
-    for player_id, sp in scored_players.items():
-        sp.mms = sp.smms + int(sp.points)
+        scored_players = next_scored_players
 
     # SOS
     for player_id, sp in scored_players.items():
